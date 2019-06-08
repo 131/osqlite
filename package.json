@@ -24,6 +24,9 @@
   },
   "dependencies": {
     "@131/sqlite3": "^4.0.8",
+    "debug": "^2.3.2",
+    "mout": "^1.0.0",
+    "sql-template": "^1.2.0"
   },
   "repository": {
     "type": "git",
