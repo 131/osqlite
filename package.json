@@ -10,10 +10,10 @@
     "coveralls": "npm install coveralls && node ./node_modules/coveralls/bin/coveralls.js < ./coverage/lcov.info"
   },
   "devDependencies": {
-    "expect.js": "^0.3.1",
-    "nyc": "^13.0.1",
     "eslint-plugin-ivs": "^1.3.0",
-    "mocha": "^3.1.2"
+    "expect.js": "^0.3.1",
+    "mocha": "^3.1.2",
+    "nyc": "^13.0.1"
   },
   "name": "osqlite",
   "description": "[osqlite](https://github.com/131/osqlite) gives you an [sqlite3](https://github.com/mapbox/node-sqlite3) database on an object storage backed (like [openstack swift](https://github.com/131/swift))",
@@ -23,7 +23,7 @@
     "test": "test"
   },
   "dependencies": {
-    "sqlite3": "^4.0.8"
+    "@131/sqlite3": "^4.0.8",
   },
   "repository": {
     "type": "git",
