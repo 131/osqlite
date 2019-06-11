@@ -2,15 +2,16 @@
   "author": "Francois Leurent <131.js@cloudyks.org>",
   "license": "MIT",
   "scripts": {
+    "test": "npm run eslint && npm run cover",
     "preversion": "npm run checkall",
-    "eslint": "eslint index.js",
+    "eslint": "eslint .",
     "checkall": "npm run eslint",
     "mocha": "node node_modules/mocha/bin/_mocha",
     "cover": "nyc --temp-directory coverage/.nyc_output --reporter text-summary --reporter html --reporter lcov  mocha",
     "coveralls": "npm install coveralls && node ./node_modules/coveralls/bin/coveralls.js < ./coverage/lcov.info"
   },
   "devDependencies": {
-    "eslint-plugin-ivs": "^1.3.0",
+    "eslint-plugin-ivs": "^2.1.0",
     "expect.js": "^0.3.1",
     "mocha": "^3.1.2",
     "nyc": "^13.0.1"
@@ -19,14 +20,12 @@
   "description": "[osqlite](https://github.com/131/osqlite) gives you an [sqlite3](https://github.com/mapbox/node-sqlite3) database on an object storage backed (like [openstack swift](https://github.com/131/swift))",
   "version": "0.1.1",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "dependencies": {
-    "@131/sqlite3": "^4.0.8",
+    "@131/sqlite3": "^4.0.9",
     "debug": "^2.3.2",
     "mout": "^1.0.0",
-    "sql-template": "^1.2.0"
+    "sql-template": "^1.2.0",
+    "swift": "^2.3.1"
   },
   "repository": {
     "type": "git",

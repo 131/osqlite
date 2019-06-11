@@ -1,208 +1,84 @@
 "use strict";
 
-const SQL       = require('sql-template');
+const tmppath   = require('nyks/fs/tmppath');
+const pipe      = require('nyks/stream/pipe');
+const createWriteStream = require('nyks/fs/createWriteStream');
+const promisify  = require('nyks/function/promisify');
+const md5File    = promisify(require('nyks/fs/md5File'));
+const cargo   = require('nyks/async/cargo');
+const sleep   = require('nyks/async/sleep');
+const Storage  = require('swift/storage');
 
-const pluck     = require('mout/array/pluck');
-const values    = require('mout/object/values');
-const merge     = require('mout/object/merge');
-const sqlite    = require('sqlite3');
+const debug  = require('debug');
 
-const debug     = require('debug')('sqlite');
 
-class SQLITE {
+const log = {
+  debug : debug('osqlite:swift:debug'),
+  info  : debug('osqlite:swift:info'),
+  error : debug('osqlite:swift:error'),
+};
 
-  constructor(...src) {
-    this.transactions_stack = {};
-    this._lnk = null;
-    this.pfx = {};
-    this._src = src;
+const Lnk = require('./lnk');
+
+class OSQLite extends Lnk {
+
+
+  constructor({backend, container, filename}) {
+    super();
+
+    if(backend.type != 'swift')
+      throw `Unsupported backend (for now)`;
+    this._sctx      = backend.ctx; //storage ctx
+    this._container = container;
+    this._filename  = filename;
+    this.backup = cargo(this._backup.bind(this), Infinity).push;
   }
 
-  get lnk() {
-    return this;
+
+  async _backup(tasks) {
+    log.debug("Ticking for %d tasks", tasks.length);
+    let _backup_path   = tmppath('backup');
+
+    var backup = this._lnk.backup(_backup_path);
+
+    await new Promise((resolve, reject) => {
+      backup.step(-1, function(err) {
+        if(err)
+          return reject(err);
+        backup.finish(function(err) {
+          if(err)
+            return reject(err);
+          resolve(backup);
+        });
+      });
+    });
+    let file_md5 = await md5File(_backup_path);
+    log.debug("uploading", {_backup_path, file_md5 });
+    await Storage.putFile(this._sctx, _backup_path, this._container, this._filename, file_md5);
+    await sleep(2000); //wait at least 2s between ticks
   }
 
-  connect() {
+  async connect() {
     if(this._lnk)
       return this._lnk;
 
-    var lnk = new sqlite.Database(...this._src);
-    lnk.get("PRAGMA foreign_keys = ON");
-    this._lnk = lnk;
-    return lnk;
-  }
+    let _tmp_path   = tmppath('sqlite');
+    let _tmp_stream = await createWriteStream(_tmp_path);
 
-  async query(query) {
-    return this._query(query, 'run');
-  }
-
-  _run(query) { return this._query(query, 'run'); }
-  _all(query) { return this._query(query, 'all'); }
-  _get(query) { return this._query(query, 'get'); }
-
-  _query(query, verb) {
-    var lnk = this.connect();
-    debug(query.toString());
-    var values = query.values.reduce((o, v, k) => (o[k + 1] = query.values[k], o), {});
-
-    return new Promise((resolve, reject) => {
-      lnk[verb](query.text, values, function(err, result) {
-        if(err)
-          return reject(err);
-        resolve(result);
-      });
-    });
-  }
-
-
-  async select(table /*, cond, cols*/) {
-    var query = typeof table != "string" ? table : SQL.select(...arguments);
-    var result = await this._all(query);
-    return result;
-  }
-
-  async value(table, cond, col) {
-    var row = await this.row(...arguments);
-    if(!row)
-      return;
-
-    var value = col && col in row ? row[col] : row[ Object.keys(row)[0] ];
-    return value;
-  }
-
-  on(what, cb) {
-    this._lnk.addListener(what, cb);
-  }
-
-  async backup(dest) {
-    var backup = this._lnk.backup(dest);
-    return new Promise((resolve, reject) => {
-      backup.step(0, function(err) {
-        if(err)
-          return reject(err);
-        //backup.finish(function(err) {
-        //  if (err)
-        //                return reject(err);
-        resolve(backup);
-        ///        });
-      });
-    });
-  }
-
-  async row(table /*, cond, cols*/) {
-    var query = typeof table != "string" ? table : SQL.select(...arguments);
-    var result = await this._get(query);
-    return result;
-  }
-
-  async col(table, cond, col) {
-    var rows = await this.select(...arguments);
-    return pluck(rows, col);
-  }
-
-  async insert() {
-    var query = SQL.insert(...arguments);
-    return await this._run(query);
-  }
-
-
-  async insert_bulk(/*table, keys, values*/) {
-    var query = SQL.insert_bulk(...arguments);
-    return await this._run(query);
-  }
-
-
-  async truncate(table) {
-    var query = SQL`TRUNCATE TABLE $id${table}`;
-    return await this._run(query);
-  }
-
-
-  async delete(table, where) {
-    var query = SQL`DELETE FROM $id${table} $where${where}`;
-    return await this._run(query);
-  }
-
-
-  async update(table, values, where) {
-    if(where === undefined)
-      where = true;
-
-    if(Object.keys(values).length == 0)
-      return;
-    var query = SQL`UPDATE $id${table} $set${values} $where${where}`;
-    return await this._run(query);
-  }
-
-  async replace(table, values, where) {
-    let row = await this.row(table, where, "*", "FOR UPDATE");
-    if(row)
-      await this.update(table, values, where);
-    else
-      await this.insert(table, merge({}, values, where));
-  }
-
-
-  get_transaction_level() {
-    var depths = values(this.transactions_stack);
-    var level = depths.length ? Math.max.apply(null, depths) + 1 : 0;
-    return level;
-  }
-
-  async begin() {
-    var transaction_hash = `_trans_${Math.random().toString(16).substr(2)}`;
-
-    var level = this.get_transaction_level();
-
-    this.transactions_stack[transaction_hash] = level;
-
-    var query = SQL`BEGIN`;
-    if(level != 0)
-      throw `Unsupported nested transactions - for now`;
-
-    await this.query(query);
-    return transaction_hash;
-  }
-
-  async commit(transaction_hash) {
-    var level = this.transactions_stack[transaction_hash];
-
-    if(level === undefined)
-      throw `Incorrect transaction passed ${transaction_hash}`;
-
-    delete this.transactions_stack[transaction_hash];
-    var max_depth = this.get_transaction_level();
-
-    if(max_depth > level)
-      throw `Incorrect transaction level passed ${level} < ${max_depth}`;
-
-    if(level == 0) {
-      try {
-        await this.query(SQL`COMMIT`);
-      } catch(err) {
-        //re-instate transaction level so it can be rolledback
-        this.transactions_stack[transaction_hash] = level;
-        throw err;
-      }
+    try {
+      let src = await Storage.download(this._sctx, this._container, this._filename);
+      await pipe(src, _tmp_stream);
+    } catch(err) {
+      log.debug("generating empty database");
     }
 
-    return true;
+    Lnk.prototype.connect.call(this, _tmp_path);
+
+    this.on("change", this.backup);
+    return this._lnk;
   }
-
-
-
-  close() {
-    if(this._lnk)
-      this._lnk.close();
-    this._lnk = null;
-  }
-
 
 }
 
-
-
-module.exports = SQLITE;
-module.exports.SQL = SQL;
-
-
+module.exports = OSQLite;
+module.exports.SQL = Lnk.SQL;
