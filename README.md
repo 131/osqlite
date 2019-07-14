@@ -2,7 +2,7 @@
 
 
 # Motivation
-Object storage is, by far, the cheapest cloud storage solution. If i want to store TB of contents, a [CAS designed]https://en.wikipedia.org/wiki/Content-addressable_storage) container is an excellent choice. But CAS relies on external database to handle file properties (name, directories & properties). [osqlite](https://github.com/131/osqlite) allows you to store your database in the very same object storage container your CAS relies on.
+Object storage is, by far, the cheapest cloud storage solution. If i want to store TB of contents, a [CAS designed](https://en.wikipedia.org/wiki/Content-addressable_storage) container is an excellent choice. But CAS relies on external database to handle file properties (name, directories & properties). [osqlite](https://github.com/131/osqlite) allows you to store your database in the very same object storage container your CAS relies on.
 
 [osqlite](https://github.com/131/osqlite) uses the SQLite3 "hot" [backup/replication API](https://sqlite.org/backup.html) to publish current database and register triggers on the [SQLite3 update hook API](https://www.sqlite.org/c3ref/update_hook.html) to know "when" to sync.
 
