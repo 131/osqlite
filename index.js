@@ -69,7 +69,7 @@ class OSQLite extends Lnk {
       let src = await Storage.download(this._sctx, this._container, this._filename);
       await pipe(src, _tmp_stream);
     } catch(err) {
-      log.debug("generating empty database");
+      log.debug("generating empty database as ", this._container, this._filename, "is empty");
     }
 
     Lnk.prototype.connect.call(this, _tmp_path);

@@ -7,7 +7,7 @@ const values    = require('mout/object/values');
 const merge     = require('mout/object/merge');
 
 const sqlite    = require('@131/sqlite3');
-
+const sleep     = require('nyks/async/sleep');
 const debug     = require('debug')('sqlite');
 
 class SQLITE {
@@ -36,6 +36,17 @@ class SQLITE {
 
   async query(query) {
     return this._query(query, 'run');
+  }
+
+  async raw(query) {
+    var lnk = await this.connect(...this._src);
+    return new Promise((resolve, reject) => {
+      lnk.run(query, function(err, result) {
+        if(err)
+          return reject(err);
+        resolve(result);
+      });
+    });
   }
 
   _run(query) { return this._query(query, 'run'); }
@@ -176,10 +187,11 @@ class SQLITE {
   }
 
 
-  close() {
+  async close() {
     if(this._lnk)
       this._lnk.close();
     this._lnk = null;
+    await sleep(1000);
   }
 
 
