@@ -7,7 +7,7 @@ const values    = require('mout/object/values');
 const merge     = require('mout/object/merge');
 
 const sqlite    = require('@131/sqlite3');
-const sleep     = require('nyks/async/sleep');
+const defer     = require('nyks/promise/defer');
 const debug     = require('debug')('sqlite');
 
 class SQLITE {
@@ -188,10 +188,12 @@ class SQLITE {
 
 
   async close() {
-    if(this._lnk)
-      this._lnk.close();
+    if(this._lnk) {
+      let defered = defer();
+      await (this._lnk.close(defered.chain), defered);
+    }
+
     this._lnk = null;
-    await sleep(1000);
   }
 
 
