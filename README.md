@@ -24,7 +24,7 @@ const creds   = require('./credentials');
 const Context = require('swift/context');
 
 var ctx = await Context.build(creds);
-var lnk = new OSQLite({
+var lnk = OSQLite.build({
   backend   : {type : 'swift', ctx},
   container : 'container',
   filename  : 'index.sqlite',

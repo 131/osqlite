@@ -53,7 +53,7 @@ describe("Full stack test suite", function() {
   //create new lnk and lines from remote database
   //reading remote database never induce WRITE operations
   let countRemote = async function() {
-    let lnk = new OSQLite({
+    let lnk = OSQLite.build({
       backend   : {type : 'swift', ctx},
       container, filename
     });
@@ -69,7 +69,7 @@ describe("Full stack test suite", function() {
 
 
   it("should not have an existing database file", async () => {
-    lnk = new OSQLite({
+    lnk = OSQLite.build({
       backend   : {type : 'swift', ctx},
       container, filename
     });
