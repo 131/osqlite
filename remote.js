@@ -62,6 +62,15 @@ class Remote extends Local {
     await sleep(2000); //wait at least 2s between ticks
   }
 
+  async destroy() {
+    log.debug("destroy remote database", this._container, this._filename);
+    try {
+      await Storage.deleteFile(this._sctx, this._container, this._filename);
+    } catch(err) {
+      log.debug("Failure in cleanup");
+    }
+  }
+
   async connect() {
     if(this._lnk)
       return this._lnk;

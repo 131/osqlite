@@ -1,7 +1,8 @@
 "use strict";
 
-const SQL       = require('sql-template');
+const fs        = require('fs');
 
+const SQL       = require('sql-template');
 const pluck     = require('mout/array/pluck');
 const values    = require('mout/object/values');
 const merge     = require('mout/object/merge');
@@ -31,6 +32,10 @@ class SQLITE {
     lnk.get("PRAGMA foreign_keys = ON");
     this._lnk = lnk;
     return lnk;
+  }
+
+  async destroy() {
+    fs.unlinkSync(this._src[0]);
   }
 
 

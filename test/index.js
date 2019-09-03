@@ -100,7 +100,11 @@ describe("Full stack test suite", function() {
     expect(await countRemote()).to.be(2);
     await sleep(1000);
     expect(await countRemote()).to.be(6);
+  });
+
+  it("should destroy remote", async () => {
     await lnk.close();//flush all to remote endpoint
+    await lnk.destroy();
   });
 
 });
