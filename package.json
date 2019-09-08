@@ -18,7 +18,7 @@
   },
   "name": "osqlite",
   "description": "[osqlite](https://github.com/131/osqlite) gives you an [sqlite3](https://github.com/mapbox/node-sqlite3) database on an object storage backed (like [openstack swift](https://github.com/131/swift))",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "index.js",
   "dependencies": {
     "@131/sqlite3": "^4.0.9",
