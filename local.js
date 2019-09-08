@@ -1,6 +1,7 @@
 "use strict";
 
 const fs        = require('fs');
+const EventEmitter  = require('events').EventEmitter;
 
 const SQL       = require('sql-template');
 const pluck     = require('mout/array/pluck');
@@ -11,9 +12,10 @@ const sqlite    = require('@131/sqlite3');
 const defer     = require('nyks/promise/defer');
 const debug     = require('debug')('sqlite');
 
-class SQLITE {
+class SQLITE extends EventEmitter {
 
   constructor(...src) {
+    super();
     this.transactions_stack = {};
     this._lnk = null;
     this.pfx = {};
@@ -70,10 +72,6 @@ class SQLITE {
         resolve(result);
       });
     });
-  }
-
-  on(what, cb) {
-    this._lnk.addListener(what, cb);
   }
 
   async select(table /*, cond, cols*/) {
@@ -196,9 +194,8 @@ class SQLITE {
     if(this._lnk) {
       let defered = defer();
       await (this._lnk.close(defered.chain), defered);
+      this._lnk = null;
     }
-
-    this._lnk = null;
   }
 
 

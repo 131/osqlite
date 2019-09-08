@@ -1,4 +1,4 @@
-[osqlite](https://github.com/131/osqlite) gives you an [sqlite3](https://github.com/mapbox/node-sqlite3) database on an object storage backed (like [openstack swift](https://github.com/131/swift))
+[osqlite](https://github.com/131/osqlite) gives you an [sqlite3](https://github.com/mapbox/node-sqlite3) database on an object storage backed (like [openstack swift](https://github.com/131/swift)).
 
 
 [![Build Status](https://travis-ci.org/131/osqlite.svg?branch=master)](https://travis-ci.org/131/osqlite)
@@ -45,6 +45,8 @@ for(let var i=0;i<10;i++) {
 await lnk.close();//flush all to remote endpoint
 
 ```
+
+
 
 # Efficiency, triggers & throttle
 [osqlite](https://github.com/131/osqlite)  will trigger synchronisation (object storage write) after each update/delete/insert following [a cargo pattern](https://camo.githubusercontent.com/f4810e00e1c5f5f8addbe3e9f49064fd5d102699/68747470733a2f2f662e636c6f75642e6769746875622e636f6d2f6173736574732f313637363837312f36383130312f38346339323036362d356632392d313165322d383134662d3964336430323431336266642e676966).
